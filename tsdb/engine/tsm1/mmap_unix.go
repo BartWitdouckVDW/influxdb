@@ -5,6 +5,7 @@ package tsm1
 import (
 	"os"
 	"syscall"
+	"unsafe"
 )
 
 func mmap(f *os.File, offset int64, length int) ([]byte, error) {
@@ -18,4 +19,13 @@ func mmap(f *os.File, offset int64, length int) ([]byte, error) {
 
 func munmap(b []byte) (err error) {
 	return syscall.Munmap(b)
+}
+
+func madvise(b []byte, advice int) error {
+	// For some reason madvise is not in the stdlib for darwin
+	_, _, errno := syscall.Syscall(syscall.SYS_MADVISE, uintptr(unsafe.Pointer(&b[0])), uintptr(len(b)), uintptr(advice))
+	if errno != 0 {
+		return errno
+	}
+	return nil
 }
